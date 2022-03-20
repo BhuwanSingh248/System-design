@@ -1,4 +1,8 @@
-# segreagating with composition 
+# means class to depends on abstruction not a concrete sub-class
+
+## currently the code interface_segregation classes are depends on SMSAuth class 
+## which is voliation to dependency inversion
+
 
 from abc import ABC, abstractmethod
 
@@ -19,10 +23,25 @@ class Order:
             total += self.quantities[i] * self.prices[i]
         return total
 
-class SMSAuth:
+class Authorizer(ABC):
+    @abstractmethod
+    def is_authorized(self):
+        pass
+
+class SMSAuth(Authorizer):
     authorized = False
     def verify_code(self, code):
         print(f'verifying code {code}')
+        self.authorized = True
+
+    def is_authorized(self):
+        return self.authorized
+
+# lets say we wnat to add one more auth say its not a robot
+class RobotVerification(Authorizer):
+    authorized = False
+    def not_a_robot(self):
+        print('not a robot')
         self.authorized = True
 
     def is_authorized(self):
@@ -35,7 +54,7 @@ class PaymentProcessor(ABC):
 
 
 class DebitPaymentProcessor(PaymentProcessor):
-    def __init__(self, security_code,  authorizer:SMSAuth) -> None:
+    def __init__(self, security_code,  authorizer:Authorizer) -> None:
         self.security_code = security_code
         self.varified = authorizer
 
@@ -57,7 +76,7 @@ class CreditPaymentProcessor(PaymentProcessor):   # does not support sms_authent
 
 class PaypalPaymentProcessor(PaymentProcessor):
     
-    def __init__(self, email_address,  authorizer:SMSAuth) -> None:
+    def __init__(self, email_address,  authorizer:Authorizer) -> None:
         self.email_address = email_address    
         self.verified = authorizer
 
@@ -78,11 +97,13 @@ if __name__ == "__main__":
 
 
     print(f"total : {order.total_price()}".center(40))
-    autherizer = SMSAuth()
+    autherizer = RobotVerification()
     processor = PaypalPaymentProcessor('abc@domain.com', autherizer)
-    autherizer.verify_code(123456)
+    autherizer.not_a_robot()
     processor.pay(order)
 
     print("".center(40,"*"))
     print("", end="\n \n \n")
+
+
 
