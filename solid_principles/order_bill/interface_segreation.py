@@ -1,10 +1,5 @@
-# if you have a object in the program you should be able replace those objects with instances 
-# of their subtype or sub class
-
-## a driver class cam assume the place of its super class and every thing should work
-
-##** problem statement ********************************
-# we wants to change the argument security code to email for Paypal method
+# seperating interface from one general purpose interface
+##  let's refector two factor auth in pre_interface_segreation
 
 
 from abc import ABC, abstractmethod
@@ -27,23 +22,28 @@ class Order:
         return total
 
 class PaymentProcessor(ABC):
-
     @abstractmethod
     def pay(self, order):
         pass 
 
+class PaymentProcessor_SMS(PaymentProcessor):
+    @abstractmethod
+    def sms_auth(self,code):
+        pass
 
-class DebitPaymentProcessor(PaymentProcessor):
+
+class DebitPaymentProcessor(PaymentProcessor_SMS):
     
     def __init__(self, security_code) -> None:
         self.security_code = security_code
+        self.varified = False
 
     def pay(self, order):    
         print('pricessing debit payment type')
         print(f'verifying security code:{self.security_code}')
         order.status = "paid"
 
-class CreditPaymentProcessor(PaymentProcessor):
+class CreditPaymentProcessor(PaymentProcessor):   # does not support sms_authentication
     def __init__(self, security_code) -> None:
         self.security_code = security_code
         
@@ -52,16 +52,19 @@ class CreditPaymentProcessor(PaymentProcessor):
         print(f'verifying security code:{self.security_code}')
         order.status = "paid"
 
-
-# Paypal uses email as a param not security code 
-class PaypalPaymentProcessor(PaymentProcessor):
+class PaypalPaymentProcessor(PaymentProcessor_SMS):
     
     def __init__(self, email_address) -> None:
-        self.email_address = email_address        
+        self.email_address = email_address    
+        self.verified = False
+
     def pay(self, order): 
         print('pricessing Paypal payment type')
         print(f'verifying email:{self.email_address}')
         order.status = "paid"         
+
+    def sms_auth(self, code):
+        self.verified = True
 
 if __name__ == "__main__":
     print("", end="\n \n \n")
@@ -74,11 +77,9 @@ if __name__ == "__main__":
 
     print(f"total : {order.total_price()}".center(40))
     processor = PaypalPaymentProcessor('abc@domain.com')
+    processor.sms_auth(123456)
     processor.pay(order)
 
     print("".center(40,"*"))
     print("", end="\n \n \n")
 
-
-# we created email or securitycode as sub class variable so that we have d/f arg for 
-# different payment type
